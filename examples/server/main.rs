@@ -1,7 +1,6 @@
 use actix_cors::Cors;
-use actix_web::{App, get, HttpRequest, HttpResponse, HttpServer, middleware, post, Result};
-use actix_web::http::header;
 use actix_web::web::Json;
+use actix_web::{get, middleware, post, App, HttpRequest, HttpResponse, HttpServer, Result};
 use log::LevelFilter;
 use serde::{Deserialize, Serialize};
 
@@ -46,6 +45,11 @@ async fn sync(req: Json<SyncRequest>) -> Result<HttpResponse> {
         merkle: client_merkle,
     } = req.into_inner();
 
+    println!(
+        "Got sync request, messages: {:?}, merkle: {:?}",
+        messages, client_merkle
+    );
+
     let trie = add_messages(&group_id, &messages).unwrap();
 
     let mut new_messages = vec![];
@@ -68,7 +72,9 @@ async fn sync(req: Json<SyncRequest>) -> Result<HttpResponse> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 初始化日志系统
-    env_logger::builder().filter_level(LevelFilter::Debug).init();
+    env_logger::builder()
+        .filter_level(LevelFilter::Debug)
+        .init();
     log::info!("starting HTTP server at http://localhost:8006");
 
     HttpServer::new(|| {
@@ -80,7 +86,7 @@ async fn main() -> std::io::Result<()> {
             .service(ping)
             .service(sync)
     })
-        .bind(("127.0.0.1", 8006))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8006))?
+    .run()
+    .await
 }

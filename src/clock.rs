@@ -1,5 +1,3 @@
-use anyhow::Result;
-
 use crate::merkle::MerkleTrie;
 use crate::timestamp::Timestamp;
 
@@ -17,25 +15,20 @@ impl<const BASE: usize> MerkleClock<BASE> {
         Self { timer, merkle }
     }
 
-    pub fn send(&mut self) -> Result<()> {
-        // Update timer
-        self.timer.send()?;
-
-        // Insert into merkle trie
-        self.merkle.insert(&self.timer);
-
-        Ok(())
+    pub fn timer(&self) -> &Timestamp {
+        &self.timer
     }
 
-    pub fn recv(&mut self, other_clock: &MerkleClock<BASE>) -> Result<()> {
-        // Update timer
-        self.timer.recv(&other_clock.timer)?;
+    pub fn timer_mut(&mut self) -> &mut Timestamp {
+        &mut self.timer
+    }
 
-        // Insert into merkle trie
-        // Insert into merkle trie
-        self.merkle.insert(&self.timer);
+    pub fn merkle(&self) -> &MerkleTrie<BASE> {
+        &self.merkle
+    }
 
-        Ok(())
+    pub fn merkle_mut(&mut self) -> &mut MerkleTrie<BASE> {
+        &mut self.merkle
     }
 }
 
@@ -58,14 +51,20 @@ mod tests {
 
         let mut c = MerkleClock::new(t, MerkleTrie::<100>::new());
 
-        c.send().unwrap();
+        // Update timer
+        c.timer.send().unwrap();
+        // Insert into merkle trie
+        c.merkle.insert(&c.timer);
         println!("Timer: {}", c.timer);
         println!("Merkle Trie:");
         c.merkle.debug();
         println!();
         assert_eq!(c.merkle.length(), 1);
 
-        c.send().unwrap();
+        // Update timer
+        c.timer.send().unwrap();
+        // Insert into merkle trie
+        c.merkle.insert(&c.timer);
         println!("Timer: {}", c.timer);
         println!("Merkle Trie:");
         c.merkle.debug();

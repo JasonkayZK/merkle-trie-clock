@@ -15,7 +15,7 @@ const MAX_DRIFT: i64 = 60000;
 
 const MAX_COUNTER: usize = 65535;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Timestamp {
     millis: i64,
     counter: usize,
@@ -47,7 +47,7 @@ impl Timestamp {
 
     /// Timestamp send. Generates a unique, monotonic timestamp suitable
     /// for transmission to another system in string format
-    pub fn send(&mut self) -> Result<()> {
+    pub fn send(&mut self) -> Result<Timestamp> {
         // Retrieve the local wall time
         let phys = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as i64;
 
@@ -89,7 +89,7 @@ impl Timestamp {
         self.millis = l_new;
         self.counter = c_new;
 
-        Ok(())
+        Ok(self.clone())
     }
 
     /// Timestamp receive. Parses and merges a timestamp from a remote
@@ -151,21 +151,22 @@ impl Timestamp {
     }
 
     /// Converts a fixed-length string timestamp to the structured value
-    pub fn parse(timestamp: &str) -> Option<Timestamp> {
+    pub fn parse(timestamp: &str) -> Result<Timestamp> {
         let parts = timestamp.split('-').collect::<Vec<_>>();
 
         if parts.len() == 5 {
             if let Ok(millis) = chrono::DateTime::parse_from_rfc3339(&parts[0..3].join("-")) {
                 if let Ok(counter) = usize::from_str_radix(parts[3], 16) {
-                    return Some(Timestamp {
+                    return Ok(Timestamp {
                         millis: millis.timestamp_millis(),
                         counter,
                         node: parts[4].to_string(),
                     });
                 }
             }
-        }
-        None
+        };
+
+        bail!("Parse timestamp failed: {}", timestamp);
     }
 
     pub fn since(iso_string: &str) -> String {
@@ -270,7 +271,7 @@ mod tests {
         // Old timestamp
         let mut local_t = Timestamp::new(1712898800831, 0, "local".to_string());
         local_t.send().unwrap();
-        println!("phys: {}, local_t: {:?}", 1712898800831, local_t);
+        println!("phys: {}, local_t: {:?}", 1712898800831i64, local_t);
         assert!(local_t.millis > 1712898800831);
         assert_eq!(local_t.counter, 0);
 

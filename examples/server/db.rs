@@ -53,7 +53,8 @@ impl Db {
 
 pub fn get_merkle(group_id: &str) -> anyhow::Result<MerkleTrie<MERKLE_BASE>> {
     let conn = Db::global().lock().unwrap();
-    let mut stmt = conn.prepare("SELECT merkle, merkle_base FROM messages_merkles WHERE group_id = ?")?;
+    let mut stmt =
+        conn.prepare("SELECT merkle, merkle_base FROM messages_merkles WHERE group_id = ?")?;
 
     let mut rows = stmt.query_map([group_id], |row| {
         let merkle: String = row.get(0)?;
@@ -105,7 +106,7 @@ pub fn add_messages(
 
         if res == 1 {
             // Update the merkle trie
-            if let Some(time) = Timestamp::parse(&message.timestamp) {
+            if let Ok(time) = Timestamp::parse(&message.timestamp) {
                 trie.insert(&time);
                 changed = true;
             } else {
@@ -147,6 +148,7 @@ pub fn find_late_messages(
 
     let mut new_messages = vec![];
     for msg in new_messages_result {
+        println!("Msg: {:?}", msg);
         let msg = msg.unwrap();
         new_messages.push(msg);
     }
@@ -186,13 +188,13 @@ mod tests {
 
         let message = Message {
             timestamp: t.to_string(),
-            dataset: "abc".to_string(),
+            dataset: "todos".to_string(),
             row: "ae37814d-4201-432b-a9a2-f277224cd730".to_string(),
-            column: "name".to_string(),
+            column: "content".to_string(),
             value_type: ValueType::String,
-            value: "Jack".to_string(),
+            value: "It's ok!".to_string(),
         };
-        let trie = add_messages("test-group", &[message]).unwrap();
+        let trie = add_messages("todo-app", &[message]).unwrap();
 
         assert!(!trie.is_empty());
         trie.debug();

@@ -104,7 +104,7 @@ impl<'de, const BASE: usize> Deserialize<'de> for MerkleTrieNode<BASE> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MerkleTrie<const BASE: usize = 3> {
     /// The root of this trie
     root: NonNull<MerkleTrieNode<BASE>>,
@@ -341,8 +341,12 @@ impl<const BASE: usize> MerkleTrie<BASE> {
             }
             // Continue to find the first diff node that stores the data
             match (node1, node2) {
-                (Some(node1), None) => Some(self.find_first_key_by_prefix(Some(node1), &key_diff_prefix)),
-                (None, Some(node2)) => Some(self.find_first_key_by_prefix(Some(node2), &key_diff_prefix)),
+                (Some(node1), None) => {
+                    Some(self.find_first_key_by_prefix(Some(node1), &key_diff_prefix))
+                }
+                (None, Some(node2)) => {
+                    Some(self.find_first_key_by_prefix(Some(node2), &key_diff_prefix))
+                }
                 (None, None) => {
                     // Only the last node is different!
                     Some(self.key_to_timestamp_millis(key_diff_prefix))
