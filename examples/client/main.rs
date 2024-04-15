@@ -65,7 +65,7 @@ fn main() {
         }
 
         // 等待任意键继续
-        println!("\nPress any key to continue...");
+        println!("\nPress ENTER to continue...");
         let _ = read_key();
         let _ = read_key();
     }
@@ -111,7 +111,7 @@ fn add_task() {
                 },
             ],
         );
-        println!("Insert result: {:?}", res);
+        println!("\nInsert result: {:?}", res);
     }
 }
 
@@ -145,7 +145,7 @@ fn update_task() {
                 },
             ],
         );
-        println!("Insert result: {:?}", res);
+        println!("\nInsert result: {:?}", res);
     }
 }
 
@@ -160,7 +160,7 @@ fn remove_task() {
         let mut s = Syncer::global().lock().unwrap();
         s.delete(GROUP_ID, TODO_TABLE, index_input).unwrap();
     }
-    println!("Delete task: {}", index_input);
+    println!("\nDelete task: {}", index_input);
 }
 
 fn read_key() -> KeyCode {
