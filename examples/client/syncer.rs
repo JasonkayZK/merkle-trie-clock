@@ -230,14 +230,6 @@ impl Syncer {
         Ok(())
     }
 
-    pub fn sync_enabled(&self) -> bool {
-        self.sync_enabled
-    }
-
-    pub fn set_sync_enabled(&mut self, sync_enabled: bool) {
-        self.sync_enabled = sync_enabled;
-    }
-
     pub fn node_name(&self) -> &str {
         &self.node_name
     }

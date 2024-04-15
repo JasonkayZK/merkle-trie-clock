@@ -50,14 +50,16 @@ fn main() {
         println!("-----------------------------------------");
         println!("1: List all todos");
         println!("2: Add todo");
-        println!("3: Delete todo");
+        println!("3: Update todo");
+        println!("4: Delete todo");
         println!("0: Exit");
         println!();
 
         match read_key() {
             KeyCode::Char('1') => show_tasks(),
             KeyCode::Char('2') => add_task(),
-            KeyCode::Char('3') => remove_task(),
+            KeyCode::Char('3') => update_task(),
+            KeyCode::Char('4') => remove_task(),
             KeyCode::Char('0') => break,
             _ => println!("Invalid option!"),
         }
@@ -103,6 +105,40 @@ fn add_task() {
                 },
                 RowParam {
                     id: None,
+                    column: TodoParam::TodoType.to_string(),
+                    value_type: ValueType::String,
+                    value: todo_type.unwrap().to_string(),
+                },
+            ],
+        );
+        println!("Insert result: {:?}", res);
+    }
+}
+
+fn update_task() {
+    println!("Enter the todo item: [id, content, type]");
+    let mut new_item = String::new();
+    io::stdin()
+        .read_line(&mut new_item)
+        .expect("Failed to read line");
+
+    let mut parts = new_item.split_whitespace();
+    let (id, content, todo_type) = (parts.next(), parts.next(), parts.next());
+    {
+        let id = id.unwrap().to_string();
+        let mut s = Syncer::global().lock().unwrap();
+        let res = s.update(
+            GROUP_ID,
+            TODO_TABLE,
+            vec![
+                RowParam {
+                    id: Some(id.clone()),
+                    column: TodoParam::Content.to_string(),
+                    value_type: ValueType::String,
+                    value: content.unwrap().to_string(),
+                },
+                RowParam {
+                    id: Some(id),
                     column: TodoParam::TodoType.to_string(),
                     value_type: ValueType::String,
                     value: todo_type.unwrap().to_string(),
