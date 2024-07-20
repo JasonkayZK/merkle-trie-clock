@@ -1,0 +1,17 @@
+[package]
+name = "merkle_trie_clock"
+version = "0.1.0"
+edition = "2021"
+description = "The core implementation for merkle-trie-based clock."
+repository = "https://github.com/JasonkayZK/merkle-trie-clock"
+license-file = "LICENSE"
+
+[dependencies]
+chrono = { workspace = true }
+uuid = { workspace = true }
+murmurhash32 = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

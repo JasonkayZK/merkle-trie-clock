@@ -5,7 +5,9 @@ use crossterm::event::{read, KeyCode};
 use crossterm::{execute, terminal};
 use log::{debug, error, LevelFilter};
 
-use crate::models::{RowParam, TodoParam, ValueType, TODO_TABLE};
+use merkle_trie_clock::models::{RowParam, ValueType};
+
+use crate::models::{TodoParam, TODO_TABLE};
 use crate::storage::Storage;
 use crate::syncer::Syncer;
 

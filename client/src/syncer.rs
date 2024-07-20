@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 
 use merkle_trie_clock::clock::MerkleClock;
 use merkle_trie_clock::merkle::MerkleTrie;
+use merkle_trie_clock::models::{Message, RowParam, ValueType};
 use merkle_trie_clock::timestamp::Timestamp;
 
-use crate::models::{Message, RowParam, ValueType};
 use crate::storage::{Storage, MERKLE_BASE};
 
 const DEFAULT_NODE_NAME: &str = "CLIENT";
@@ -265,6 +265,6 @@ mod tests {
             println!("{}", c.node_name);
         }
 
-        let c2 = Syncer::global().lock().unwrap();
+        let _c2 = Syncer::global().lock().unwrap();
     }
 }

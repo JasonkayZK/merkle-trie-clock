@@ -1,0 +1,17 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+merkle_trie_clock = { path = "../core" }
+
+log = { workspace = true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+actix-web = { version = "4" }
+actix-cors = { version = "0.7.0" }
+rusqlite = { version = "0.31.0" }

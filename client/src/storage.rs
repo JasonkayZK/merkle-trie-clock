@@ -1,11 +1,13 @@
-use log::debug;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 
+use log::debug;
+
 use merkle_trie_clock::clock::MerkleClock;
+use merkle_trie_clock::models::Message;
 use merkle_trie_clock::timestamp::Timestamp;
 
-use crate::models::{Message, Todo, TODO_TABLE};
+use crate::models::{Todo, TODO_TABLE};
 
 pub const MERKLE_BASE: usize = 3;
 

@@ -1,7 +1,6 @@
 use std::cmp::max;
 use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::usize;
 
 use anyhow::{bail, Result};
 use chrono::DateTime;

@@ -4,9 +4,8 @@ use anyhow::bail;
 use rusqlite::{params, Connection};
 
 use merkle_trie_clock::merkle::MerkleTrie;
+use merkle_trie_clock::models::Message;
 use merkle_trie_clock::timestamp::Timestamp;
-
-use crate::models::Message;
 
 pub const MERKLE_BASE: usize = 3;
 
@@ -160,10 +159,10 @@ pub fn find_late_messages(
 mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
+    use merkle_trie_clock::models::{Message, ValueType};
     use merkle_trie_clock::timestamp::Timestamp;
 
     use crate::db::{add_messages, get_merkle, Db};
-    use crate::models::{Message, ValueType};
 
     #[test]
     fn db_test() {

@@ -5,13 +5,12 @@ use log::LevelFilter;
 use serde::{Deserialize, Serialize};
 
 use merkle_trie_clock::merkle::MerkleTrie;
+use merkle_trie_clock::models::Message;
 use merkle_trie_clock::timestamp::Timestamp;
 
 use crate::db::{add_messages, find_late_messages, MERKLE_BASE};
-use crate::models::Message;
 
 pub mod db;
-pub mod models;
 
 const NODE_NAME: &str = "SERVER";
 

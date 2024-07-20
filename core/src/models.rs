@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
@@ -29,8 +29,8 @@ impl From<String> for ValueType {
     }
 }
 
-impl fmt::Display for ValueType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for ValueType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let printable = match self {
             ValueType::None => "None",
             ValueType::Number => "Number",
@@ -38,4 +38,12 @@ impl fmt::Display for ValueType {
         };
         write!(f, "{}", printable)
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct RowParam {
+    pub id: Option<String>,
+    pub column: String,
+    pub value_type: ValueType,
+    pub value: String,
 }
