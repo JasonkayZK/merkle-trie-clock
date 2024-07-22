@@ -1,8 +1,9 @@
 use std::env;
-use std::sync::{Mutex, OnceLock};
+use std::fmt::Debug;
 
 use anyhow::bail;
 use log::debug;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use merkle_trie_clock::clock::MerkleClock;
@@ -10,16 +11,15 @@ use merkle_trie_clock::merkle::MerkleTrie;
 use merkle_trie_clock::models::{Message, RowParam, ValueType};
 use merkle_trie_clock::timestamp::Timestamp;
 
-use crate::storage::{Storage, MERKLE_BASE};
+use crate::mem_storage::{MemStorage, MERKLE_BASE_CONST};
+use crate::storage::{MessageHandler, Store};
 
 const DEFAULT_NODE_NAME: &str = "CLIENT";
 
 const ENDPOINT: &str = "http://localhost:8006";
 
-pub static SYNCER: OnceLock<Mutex<Syncer>> = OnceLock::new();
-
 #[derive(Debug, Serialize, Deserialize)]
-struct SyncRequest {
+struct SyncRequest<const MERKLE_BASE: usize> {
     group_id: String,
     client_id: String,
     messages: Vec<Message>,
@@ -27,29 +27,57 @@ struct SyncRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct SyncResponse {
+struct SyncResponse<const MERKLE_BASE: usize> {
     messages: Vec<Message>,
     merkle: MerkleTrie<MERKLE_BASE>,
 }
 
-pub struct Syncer {
+pub struct Syncer<
+    Item: 'static + MessageHandler + DeserializeOwned + Serialize + Debug,
+    const MERKLE_BASE: usize = MERKLE_BASE_CONST,
+> {
     node_name: String,
     merkle_clock: MerkleClock<MERKLE_BASE>,
     sync_enabled: bool,
+    storage: Box<dyn Store<Item, MERKLE_BASE>>,
 }
 
-impl Syncer {
-    pub fn global() -> &'static Mutex<Self> {
-        SYNCER.get_or_init(|| {
-            let node_name = env::var("CLIENT").unwrap_or(DEFAULT_NODE_NAME.to_string());
-            let t = Timestamp::new(0, 0, node_name.clone());
-            let c = MerkleClock::new(t, MerkleTrie::<MERKLE_BASE>::new());
-            Mutex::new(Syncer {
-                node_name,
-                merkle_clock: c,
-                sync_enabled: true,
-            })
-        })
+unsafe impl<
+        Item: 'static + MessageHandler + DeserializeOwned + Serialize + Debug,
+        const MERKLE_BASE: usize,
+    > Sync for Syncer<Item, MERKLE_BASE>
+{
+}
+
+unsafe impl<
+        Item: 'static + MessageHandler + DeserializeOwned + Serialize + Debug,
+        const MERKLE_BASE: usize,
+    > Send for Syncer<Item, MERKLE_BASE>
+{
+}
+
+impl<Item: MessageHandler + DeserializeOwned + Serialize + Debug, const MERKLE_BASE: usize> Default
+    for Syncer<Item, MERKLE_BASE>
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<Item: MessageHandler + DeserializeOwned + Serialize + Debug, const MERKLE_BASE: usize>
+    Syncer<Item, MERKLE_BASE>
+{
+    pub fn new() -> Self {
+        let node_name = env::var("CLIENT").unwrap_or(DEFAULT_NODE_NAME.to_string());
+        let t = Timestamp::new(0, 0, node_name.clone());
+        let c = MerkleClock::new(t, MerkleTrie::<MERKLE_BASE>::new());
+
+        Syncer {
+            node_name,
+            merkle_clock: c,
+            sync_enabled: true,
+            storage: Box::new(MemStorage::new()),
+        }
     }
 
     pub fn insert(
@@ -166,7 +194,7 @@ impl Syncer {
                 .header("Content-Type", "application/json")
                 .body(body)
                 .send()?
-                .json::<SyncResponse>()?;
+                .json::<SyncResponse<MERKLE_BASE>>()?;
             debug!("Got synced response: {:#?}", res);
 
             if !res.messages.is_empty() {
@@ -203,9 +231,7 @@ impl Syncer {
         group_id: &str,
         mut messages: Vec<Message>,
     ) -> anyhow::Result<()> {
-        Storage::global()
-            .lock()
-            .unwrap()
+        self.storage
             .apply_messages(&mut self.merkle_clock, &mut messages)?;
         self.sync(group_id, messages, None)?;
         Ok(())
@@ -223,9 +249,7 @@ impl Syncer {
             }
         }
 
-        Storage::global()
-            .lock()
-            .unwrap()
+        self.storage
             .apply_messages(&mut self.merkle_clock, &mut messages)?;
         Ok(())
     }
@@ -234,37 +258,20 @@ impl Syncer {
         &self.node_name
     }
 
+    pub fn storage(&self) -> &dyn Store<Item, MERKLE_BASE> {
+        self.storage.as_ref()
+    }
+
     pub fn debug(&self) {
         debug!(
             "Current time: {:?}, current merkle trie: {:?}",
             self.merkle_clock.timer(),
             self.merkle_clock.merkle()
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::storage::Storage;
-    use crate::syncer::Syncer;
-
-    #[test]
-    fn sync_test() {
-        let mut s = Syncer::global().lock().unwrap();
-
-        let res = s.sync("todo-app", vec![], None);
-        println!("{:#?}", res);
-
-        Storage::global().lock().unwrap().debug();
-    }
-
-    #[test]
-    fn deadlock_test() {
-        {
-            let c = Syncer::global().lock().unwrap();
-            println!("{}", c.node_name);
-        }
-
-        let _c2 = Syncer::global().lock().unwrap();
+        debug!("Current storage: {:#?}", self.storage.items());
+        debug!(
+            "Current applied_messages: {:#?}",
+            self.storage.applied_messages()
+        );
     }
 }

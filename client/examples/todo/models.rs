@@ -1,12 +1,14 @@
 use std::fmt::{Display, Formatter, Result};
 
 use anyhow::bail;
+use serde::{Deserialize, Serialize};
 
+use client::storage::MessageHandler;
 use merkle_trie_clock::models::Message;
 
 pub const TODO_TABLE: &str = "todos";
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Todo {
     pub id: String,
     pub content: String,
@@ -14,15 +16,17 @@ pub struct Todo {
     pub tombstone: i8,
 }
 
-impl Todo {
-    pub fn new(id: String) -> Self {
-        Self {
-            id,
-            ..Default::default()
+impl MessageHandler for Todo {
+    fn from_message(message: &Message) -> Self {
+        Todo {
+            id: message.row.clone(),
+            content: "".to_string(),
+            todo_type: "".to_string(),
+            tombstone: 0,
         }
     }
 
-    pub fn handle_message(&mut self, message: &Message) -> anyhow::Result<()> {
+    fn handle_message(&mut self, message: &Message) -> anyhow::Result<()> {
         if message.dataset.ne(TODO_TABLE) {
             bail!("Wrong table: {}", message.dataset);
         }
@@ -48,6 +52,10 @@ impl Todo {
         }
 
         Ok(())
+    }
+
+    fn table_name() -> String {
+        String::from(TODO_TABLE)
     }
 }
 

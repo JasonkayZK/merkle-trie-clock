@@ -4,32 +4,28 @@ use std::{io, thread};
 use crossterm::event::{read, KeyCode};
 use crossterm::{execute, terminal};
 use log::{debug, error, LevelFilter};
-
 use merkle_trie_clock::models::{RowParam, ValueType};
 
+use crate::global_syncer::TodoSyncer;
 use crate::models::{TodoParam, TODO_TABLE};
-use crate::storage::Storage;
-use crate::syncer::Syncer;
 
+mod global_syncer;
 mod models;
-mod storage;
-mod syncer;
 
 const GROUP_ID: &str = "todo-app";
 
 fn main() {
     // 初始化日志系统
     env_logger::builder().filter_level(LevelFilter::Info).init();
-    let node_name = Syncer::global().lock().unwrap().node_name().to_string();
+    let node_name = TodoSyncer::global().lock().unwrap().node_name().to_string();
     let mut stdout = io::stdout();
 
     // Fire sync event
     thread::spawn(|| loop {
         {
-            let mut s = Syncer::global().lock().unwrap();
+            let mut s = TodoSyncer::global().lock().unwrap();
             {
                 s.debug();
-                Storage::global().lock().unwrap().debug();
             }
 
             match s.sync(GROUP_ID, vec![], None) {
@@ -74,8 +70,8 @@ fn main() {
 }
 
 fn show_tasks() {
-    let storage = Storage::global().lock().unwrap();
-    let todos = storage.todos();
+    let storage = TodoSyncer::global().lock().unwrap();
+    let todos = storage.storage().items();
     todos
         .iter()
         .filter(|(_, v)| v.tombstone == 0)
@@ -94,7 +90,7 @@ fn add_task() {
     let mut parts = new_item.split_whitespace();
     let (content, todo_type) = (parts.next(), parts.next());
     {
-        let mut s = Syncer::global().lock().unwrap();
+        let mut s = TodoSyncer::global().lock().unwrap();
         let res = s.insert(
             GROUP_ID,
             TODO_TABLE,
@@ -128,7 +124,7 @@ fn update_task() {
     let (id, content, todo_type) = (parts.next(), parts.next(), parts.next());
     {
         let id = id.unwrap().to_string();
-        let mut s = Syncer::global().lock().unwrap();
+        let mut s = TodoSyncer::global().lock().unwrap();
         let res = s.update(
             GROUP_ID,
             TODO_TABLE,
@@ -159,7 +155,7 @@ fn remove_task() {
         .expect("Failed to read line");
     let index_input = index_input.trim();
     {
-        let mut s = Syncer::global().lock().unwrap();
+        let mut s = TodoSyncer::global().lock().unwrap();
         s.delete(GROUP_ID, TODO_TABLE, index_input).unwrap();
     }
     println!("\nDelete task: {}", index_input);
