@@ -14,4 +14,4 @@ serde_json = { workspace = true }
 
 actix-web = { version = "4" }
 actix-cors = { version = "0.7.0" }
-rusqlite = { version = "0.31.0" }
+rusqlite = { version = "0.32.0" }
